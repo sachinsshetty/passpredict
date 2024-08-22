@@ -13,6 +13,7 @@ from . import __version__
 from .caches import JsonCache
 from .exceptions import CelestrakError, PassAlgorithmError, PropagationError
 from .sources import CelestrakTLESource
+from .sources import  SatnogsDbTLESource
 from .geocoding import NominatimGeocoder
 from .satellites import SGP4Propagator
 from .locations import Location
@@ -57,8 +58,8 @@ def main(satids, categories, days, location_query, latitude, longitude, height, 
         raise click.BadParameter("Must specify observing location name with --location or coordinates with --lat and --lon")
     date_start = datetime.datetime.now(tz=location.timezone)
     date_end = date_start + datetime.timedelta(days=days)
-
-    source = CelestrakTLESource(cache=cache)
+    source = SatnogsDbTLESource(cache=cache)
+    #source = CelestrakTLESource(cache=cache)
     # Get TLE data for selected satellites and categories
     tles = []
     if len(satids) == 0 and len(categories) == 0:

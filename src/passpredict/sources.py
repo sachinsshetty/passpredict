@@ -62,6 +62,79 @@ class AsyncPasspredictTLESource(abc.ABC):
         predictor.set_propagator()
         return predictor
 
+class SatnogsDbTLESource(PasspredictTLESource):
+    """
+    TLE source that checks the local cache for orbital elements,
+    otherwise queries the SatNOGS database
+    """
+    def __init__(self, cache: BaseCache = None) -> None:
+        if cache:
+            self.cache = cache
+        else:
+            self.cache = MemoryCache()
+
+    def add_tle(self, satid: int, tle: TLE, epoch: datetime.datetime):
+        """
+        Add TLE to local cache
+        """
+        return super().add_tle(satid, tle, epoch)
+
+    def get_tle(self, satid: int) -> TLE:
+        """
+        Query TLE from cache. If not found in cache, then query SatNOGS database
+        """
+        key = f"tle:{satid}"
+        res = self.cache.get(key)
+        if res:
+            tle = TLE(res['satid'], res['lines'], name=res.get('name', ''))
+        else:
+            tle = self._query_tle_from_satnogs(satid)
+            self.cache.set(key, tle.dict(), ttl=86400)
+        return tle
+
+    def get_tle_category(self, category: str) -> List[TLE]:
+        """
+        Query TLE from cache. If not found in cache, then query SatNOGS database
+        """
+        # first, get list of satellite IDs for category
+        key = f"tlecategory:{category}"
+        res = self.cache.get(key)
+        if res:
+            satids = res
+            tles = []
+            for satid in satids:
+                tle = self.get_tle(satid)
+                tles.append(tle)
+        else:
+            tles = self._query_tle_category_from_satnogs(category)
+            satid_list = [t.satid for t in tles]
+            self.cache.set(key, satid_list, ttl=86400)
+            for tle in tles:
+                self.cache.set(f"tle:{tle.satid}", tle.dict(), ttl=86460)
+        return tles
+
+    def _query_tle_from_satnogs(self, satid: int = None):
+        """
+        Download current TLE for a satellite from SatNOGS and save it to the local cache
+        """
+        # first, check if TLE is already in local cache
+        key = f"tle:{satid}"
+        res = self.cache.get(key)
+        if res:
+            return TLE(res['satid'], res['lines'], name=res.get('name', ''))
+        
+        # TLE not found in local cache, query SatNOGS API
+        #https://db.satnogs.org/api/tle/?format=3le&norad_cat_id=98847
+        url = "https://db.satnogs.org/api/tle/?format=3le"
+        params = {"norad_cat_id": 98847}
+
+        r = httpx.get(url, params=params)
+        if r.text.lower() in ("no tle found", "no gp data found") or r.status_code >= 300:
+            raise CelestrakError(f'Celestrak TLE for satellite {satid} not found')
+        tle_strings = r.text.splitlines()
+        tle = parse_tle(tle_strings)
+        return tle
+
 
 class CelestrakTLESource(PasspredictTLESource):
     """

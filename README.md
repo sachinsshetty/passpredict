@@ -1,5 +1,7 @@
 # passpredict
 
+passpredict -lat 49.7833 -lon 9.9333 -s 98847 --days 2 --all --summary
+
 [![Tests](https://github.com/samtx/passpredict/actions/workflows/main.yml/badge.svg)](https://github.com/samtx/passpredict/actions/workflows/main.yml)
 
 Predict upcoming satellite overpasses over a point on Earth.
