@@ -11,7 +11,7 @@ from .sources import (
     AsyncPasspredictTLESource,
     PasspredictTLESource,
     CelestrakTLESource,
-    SatnogsDbTLESource
+    SatnogsDbTLESource,
     MemoryTLESource,
 )
 
