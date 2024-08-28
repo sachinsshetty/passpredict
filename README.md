@@ -1,13 +1,19 @@
 # passpredict
 
+Added - SatNOGS as a source
+
 - python -m venv .venv
 - source .venv/bin/activate
 - pip install git+https://github.com/sachinsshetty/passpredict.git
 
 - passpredict -lat 49.7833 -lon 9.9333 -s 98847 --days 2 --all --summary
 
-- cd examples
-- python satnogs_source.py
+- python examples/satnogs_source.py
+
+----
+
+Original README 
+
 
 [![Tests](https://github.com/samtx/passpredict/actions/workflows/main.yml/badge.svg)](https://github.com/samtx/passpredict/actions/workflows/main.yml)
 
