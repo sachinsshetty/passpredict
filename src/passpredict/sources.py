@@ -124,9 +124,8 @@ class SatnogsDbTLESource(PasspredictTLESource):
             return TLE(res['satid'], res['lines'], name=res.get('name', ''))
         
         # TLE not found in local cache, query SatNOGS API
-        #https://db.satnogs.org/api/tle/?format=3le&norad_cat_id=98847
         url = "https://db.satnogs.org/api/tle/?format=3le"
-        params = {"norad_cat_id": 98847}
+        params = {"norad_cat_id": satid}
 
         r = httpx.get(url, params=params)
         if r.text.lower() in ("no tle found", "no gp data found") or r.status_code >= 300:
@@ -134,6 +133,23 @@ class SatnogsDbTLESource(PasspredictTLESource):
         tle_strings = r.text.splitlines()
         tle = parse_tle(tle_strings)
         return tle
+        
+    def _query_tle_category_from_satnogs(self, category: str) -> List[TLE]:
+        """
+        Download current TLEs from Celestrak and save them to a JSON file
+
+        Enter Celestrak category string.
+        Eg. visual, stations, tle-new, weather, noaa, oneweb, starlink
+        """
+        url = f'https://celestrak.org/NORAD/elements/{category}.txt'
+        r = httpx.get(url)
+        if not r.text or r.status_code >= 300:
+            raise CelestrakError(f'Celestrak TLEs for {category}.txt not found')
+        tle_strings = r.text.splitlines()
+        tles = parse_multiple_tles(tle_strings)
+        return tles
+
+
 
 
 class CelestrakTLESource(PasspredictTLESource):
